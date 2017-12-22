@@ -2,7 +2,7 @@ import webwhatsapi
 import csv
 from webwhatsapi import GroupChat
 print("Scan QR")
-driv = webwhatsapi.WhatsAPIDriver()
+driv = webwhatsapi.WhatsAPIDriver(loadstyles=True)
 ##Scan QR Now
 print('Exporting...')
 ##Get all chats
