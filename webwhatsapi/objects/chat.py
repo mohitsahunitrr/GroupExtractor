@@ -13,7 +13,7 @@ class ChatMetaClass(type):
         :return: Instance of appropriate chat type
         :rtype: Chat | GroupChat
         """
-        assert js_obj["kind"] in ["chat", "group"], "Expected chat or group object, got {0}".format(js_obj["kind"])
+        assert js_obj["kind"] in ["chat", "group", "broadcast"], "Expected chat or group object, got {0}".format(js_obj["kind"])
 
         if js_obj["isGroup"]:
             return type.__call__(GroupChat, js_obj, driver)
