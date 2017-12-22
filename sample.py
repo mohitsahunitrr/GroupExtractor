@@ -1,12 +1,19 @@
 import webwhatsapi
 import csv
 from webwhatsapi import GroupChat
+import time
 print("Scan QR")
 driv = webwhatsapi.WhatsAPIDriver(loadstyles=True)
 ##Scan QR Now
 print('Exporting...')
 ##Get all chats
 chats = driv.get_all_chats()
+
+while len(chats)==0:
+	time.sleep(4)
+	print('Retrying...')
+	chats = driv.get_all_chats()
+
 ##Filter Group chats
 groupchats = filter(lambda chat:(type(chat) == GroupChat), chats)
 def convertStr(text):
