@@ -1,5 +1,6 @@
 from whatsapp_object import WhatsappObject, driver_needed
-
+from webwhatsapi.helper import safe_str
+import six
 
 class Contact(WhatsappObject):
     def __init__(self, js_obj, driver=None):
@@ -10,18 +11,20 @@ class Contact(WhatsappObject):
 
     @driver_needed
     def get_common_groups(self):
-        return self._driver.wapi_functions.getCommonGroups(self.id)
+        return self.driver.wapi_functions.getCommonGroups(self.id)
 
     @driver_needed
     def get_chat(self):
-        return self._driver.get_chat_from_id(self.id)
+        return self.driver.get_chat_from_id(self.id)
+
+    def get_safe_name(self):
+        name = (self.name or self.push_name or self.formatted_name)
+        if (isinstance(name, six.string_types)):
+            safe_name = safe_str(name)
+        else:
+            safe_name = "Unknown"
+        return safe_name
 
     def __repr__(self):
-        try:
-            safe_name = (self.name or self.push_name or self.formatted_name)
-        except UnicodeEncodeError:
-            safe_name = "(unicode name)"
-        except:
-            safe_name = "Unknown"
-
+        safe_name = self.get_safe_name()
         return "<Contact {0} ({1})>".format(safe_name, self.id)

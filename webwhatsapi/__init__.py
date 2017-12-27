@@ -18,7 +18,7 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support import expected_conditions as ec
+from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.common.exceptions import NoSuchElementException
 
@@ -36,8 +36,9 @@ from objects.contact import Contact
 from objects.message import Message, MessageGroup
 from webwhatsapi.wapi_js_wrapper import WapiJsWrapper
 
-import pprint
-pp = pprint.PrettyPrinter(indent=4)
+if __debug__:
+    import pprint
+    pp = pprint.PrettyPrinter(indent=4)
 
 class WhatsAPIDriver(object):
     _PROXY = None
@@ -94,7 +95,7 @@ class WhatsAPIDriver(object):
         self._profile.set_preference("network.proxy.ssl", proxy_address)
         self._profile.set_preference("network.proxy.ssl_port", int(proxy_port))
 
-    def __init__(self, client="firefox", username="API", proxy=None, command_executor=None, loadstyles=False):
+    def __init__(self, client="firefox", username="API", proxy=None, command_executor=None, loadstyles=False, profile=None):
         "Initialises the webdriver"
 
         # Get the name of the config folder
@@ -114,18 +115,22 @@ class WhatsAPIDriver(object):
         log_file_handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s %(message)s'))
         self.logger.addHandler(log_file_handler)
 
-        self.client = client.lower()
-        if self.client == "firefox":
-            # TODO: Finish persistant sessions. As of now, persistant sessions do not work for Firefox. You will need to scan each time.
-            self._profile_path = os.path.join(self.config_dir, "profile")
+        if profile is not None:
+            self._profile_path = profile
             self.logger.info("Checking for profile at %s" % self._profile_path)
             if not os.path.exists(self._profile_path):
-                self.logger.info("Profile not found. Creating profile")
-                self._profile = webdriver.FirefoxProfile()
-                self.save_firefox_profile()
-            else:
-                self.logger.info("Profile found")
+                print("Could not find profile at %s" % profile)
+                self.logger.error("Could not find profile at %s" % profile)
+                exit(-1)
+        else:
+            self._profile_path = None
+
+        self.client = client.lower()
+        if self.client == "firefox":
+            if self._profile_path is not None:
                 self._profile = webdriver.FirefoxProfile(self._profile_path)
+            else:
+                self._profile = webdriver.FirefoxProfile()
             if loadstyles == False:
                 # Disable CSS
                 self._profile.set_preference('permissions.default.stylesheet', 2)
@@ -141,8 +146,8 @@ class WhatsAPIDriver(object):
 
         elif self.client == "chrome":
             self._profile = webdriver.chrome.options.Options()
-            self._profile_path = os.path.join(self.config_dir, 'chrome_cache')
-            self._profile.add_argument("user-data-dir=%s" % self._profile_path)
+            if self._profile_path is not None:
+                self._profile.add_argument("user-data-dir=%s" % self._profile_path)
             if proxy is not None:
                 profile.add_argument('--proxy-server=%s' % proxy)
             self.driver = webdriver.Chrome(chrome_options=self._profile)
@@ -164,7 +169,7 @@ class WhatsAPIDriver(object):
         self.driver.implicitly_wait(10)
         self.driver.get(self._URL)
 
-    def wait_till_login(self):
+    def wait_for_login(self):
         """Waits for the QR to go away"""
         WebDriverWait(self.driver, 90).until(
             EC.visibility_of_element_located((By.CSS_SELECTOR, self._SELECTORS['mainPage']))
@@ -184,54 +189,6 @@ class WhatsAPIDriver(object):
 
     def screenshot(self, filename):
         self.driver.get_screenshot_as_file(filename)
-
-    # def view_unread(self):
-    #     return self.view_messages(unread_only=True)
-    #
-    # def view_messages(self, unread_only=False):
-    #     try:
-    #         script_path = os.path.dirname(os.path.abspath(__file__))
-    #     except NameError:
-    #         script_path = os.getcwd()
-    #     script = open(os.path.join(script_path, "js_scripts/get_messages.js"), "r").read()
-    #     Store = self.driver.execute_script(script, unread_only)
-    #     return Store
-    #
-    # def send_to_whatsapp_id(self, id, message):
-    #     try:
-    #         script_path = os.path.dirname(os.path.abspath(__file__))
-    #     except NameError:
-    #         script_path = os.getcwd()
-    #     script = open(os.path.join(script_path, "js_scripts/send_message_to_whatsapp_id.js"), "r").read()
-    #     success = self.driver.execute_script(script, id, message)
-    #     return success
-    #
-    # def get_id_from_number(self, name):
-    #     try:
-    #         script_path = os.path.dirname(os.path.abspath(__file__))
-    #     except NameError:
-    #         script_path = os.getcwd()
-    #     script = open(os.path.join(script_path, "js_scripts/id_from_name.js"), "r").read()
-    #     id = self.driver.execute_script(script, name)
-    #     return id
-    #
-    # def send_to_phone_number(self, pno, message):
-    #     try:
-    #         script_path = os.path.dirname(os.path.abspath(__file__))
-    #     except NameError:
-    #         script_path = os.getcwd()
-    #     script = open(os.path.join(script_path, "js_scripts/send_message_to_phone_number.js"), "r").read()
-    #     success = self.driver.execute_script(script, pno, message)
-    #     return success
-    #
-    # def get_groups(self):
-    #     try:
-    #         script_path = os.path.dirname(os.path.abspath(__file__))
-    #     except NameError:
-    #         script_path = os.getcwd()
-    #     script = open(os.path.join(script_path, "js_scripts/get_groups.js"), "r").read()
-    #     success = self.driver.execute_script(script)
-    #     return success
 
     def get_contacts(self):
         """
@@ -255,26 +212,28 @@ class WhatsAPIDriver(object):
         """
         self.driver.execute_script("window.WAPI.lastRead = {}")
 
-    def get_unread(self):
+    def get_unread(self, include_me=False, include_notifications=False):
         """
         Fetches unread messages
 
         :return: List of unread messages grouped by chats
         :rtype: list[MessageGroup]
         """
-        raw_message_groups = self.wapi_functions.getUnreadMessages()
+        raw_message_groups = self.wapi_functions.getUnreadMessages(include_me, include_notifications)
 
         unread_messages = []
         for raw_message_group in raw_message_groups:
             chat = Chat(raw_message_group)
-            pp.pprint(raw_message_group)
             messages = [Message(message) for message in raw_message_group["messages"]]
             unread_messages.append(MessageGroup(chat, messages))
 
+        for message in unread_messages:
+            message.chat.driver = self
+
         return unread_messages
 
-    def get_all_messages_in_chat(self, chat, include_me=False):
-        message_objs = self.wapi_functions.getAllMessagesInChat(chat.id, include_me)
+    def get_all_messages_in_chat(self, chat, include_me=False, include_notifications=False):
+        message_objs = self.wapi_functions.getAllMessagesInChat(chat.id, include_me, include_notifications)
 
         messages = []
         for message in message_objs:
@@ -313,10 +272,8 @@ class WhatsAPIDriver(object):
         :return: Chat
         :rtype: Chat
         """
-        chats = filter(lambda chat: not chat.is_group, self.get_all_chats())
-        return next((contact for contact in chats if contact.id.startswith(number)), None)
-
-
+        chats = filter(lambda chat:(type(chat) is UserChat), self.get_all_chats())
+        return next((contact for contact in chats if (number in contact.id)), None)
 
     def reload_qr(self):
         self.driver.find_element_by_css_selector(self._SELECTORS['qrCode']).click()

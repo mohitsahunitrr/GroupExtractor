@@ -1,6 +1,6 @@
 import webwhatsapi
 import csv
-from webwhatsapi import GroupChat
+from webwhatsapi.objects.chat import GroupChat
 import time
 print("Scan QR")
 driv = webwhatsapi.WhatsAPIDriver(loadstyles=True)
@@ -16,8 +16,13 @@ while len(chats)==0:
 
 ##Filter Group chats
 groupchats = filter(lambda chat:(type(chat) == GroupChat), chats)
+
 def convertStr(text):
 	return str(text.encode('utf-8').decode('ascii', 'ignore')) if text else "(empty)"
+
+def cleanNumber(text):
+	"".join(text.split('.c@us'))
+
 for chat in groupchats:
 	try:
 		##Create CSV
@@ -27,7 +32,7 @@ for chat in groupchats:
 		writer.writerow(['Name', 'Profile Name', 'Phone Number'])
 		##Iterate Through Group Participants
 		for participant in chat.get_participants():
-			writer.writerow([convertStr(participant.name), convertStr(participant.push_name), participant.id])
+			writer.writerow([convertStr(participant.name), convertStr(participant.push_name), cleanNumber(participant.id)])
 		ofile.close()
 		print("Done with " + safe_name)
 	except:
