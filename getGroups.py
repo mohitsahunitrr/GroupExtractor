@@ -21,7 +21,10 @@ def convertStr(text):
 	return str(text.encode('utf-8').decode('ascii', 'ignore')) if text else "(empty)"
 
 def cleanNumber(text):
-	"".join(text.split('.c@us'))
+	text = "".join(text.split('.c@us'))
+	if text.startswith("91"):
+		text = text[2:]
+	return text
 
 for chat in groupchats:
 	try:
