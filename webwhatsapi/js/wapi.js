@@ -165,9 +165,33 @@ window.WAPI.loadEarlierMessages = function (id, done) {
  */
 
 window.WAPI.loadAllEarlierMessages = function (id, done) {
+    console.log("Starting Load", found.msgs.length);
     const found = Store.Chat.models.find((chat) => chat.id === id);
+    console.log("Done ", found.msgs.length);
     x = function(){
         if(!found.msgs.msgLoadState.__x_noEarlierMsgs){
+            console.log("Again ", found.msgs.length);
+            found.loadEarlierMsgs().then(x);
+        }else {
+            console.log("Done ", found.msgs.length);
+            done();
+        }
+    };
+    x();
+};
+
+/**
+ * Load more messages in chat object from store by ID till a particular date
+ *
+ * @param id ID of chat
+ * @param done Optional callback function for async execution
+ * @returns None
+ */
+
+window.WAPI.loadEarlierMessagesTillDate = function (id, lastMessage, done) {
+    const found = Store.Chat.models.find((chat) => chat.id === id);
+    x = function(){
+        if(found.msgs.models[0].t>lastMessage){
             found.loadEarlierMsgs().then(x);
         }else {
             done();
