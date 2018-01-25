@@ -96,6 +96,7 @@ class NotificationExtractor(npyscreen.NPSApp):
         ms2= F.add(npyscreen.TitleMultiSelect, max_height =-2, name="Pick Several",
         values = [ str(i) + ". "+safe_str(x.name) for i,x in enumerate(groupchats)], scroll_exit=True)
         F.edit()
+        F.exit_editing()
         chosenGroups = [ groupchats[int(x.split('.')[0])] for x in ms2.get_selected_objects() ]
         last = self.getProgress()
         print("Last backed up: ", last)
