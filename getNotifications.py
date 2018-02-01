@@ -7,7 +7,7 @@ import csv
 import time
 from datetime import datetime
 import npyscreen
-import logging
+import logging as logger
 import ipdb
 
 def convertStr(text):
@@ -22,8 +22,7 @@ def cleanNumber(text):
 #!/usr/bin/env python
 # encoding: utf-8
 
-logger = logging.getLogger("Get Notifications")
-
+logger.basicConfig(filename='progress.log',level=logger.DEBUG)
 
 class NotificationExtractor(npyscreen.NPSApp):
     filename="removals.csv"
