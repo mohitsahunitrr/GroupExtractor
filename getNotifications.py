@@ -7,6 +7,7 @@ import csv
 import time
 from datetime import datetime
 import npyscreen
+import logging
 import ipdb
 
 def convertStr(text):
@@ -21,6 +22,9 @@ def cleanNumber(text):
 #!/usr/bin/env python
 # encoding: utf-8
 
+logger = logging.getLogger("Get Notifications")
+
+
 class NotificationExtractor(npyscreen.NPSApp):
     filename="removals.csv"
     def getProgress(self):
@@ -30,10 +34,10 @@ class NotificationExtractor(npyscreen.NPSApp):
                 next(reader)
                 last = max([datetime.strptime(row[4], "%d/%m/%y %H:%M") for row in reader])
 
-            print('Detected backup, continuing progress...')
+            logger.info('Detected backup, continuing progress...')
             return last
         except:
-            print('No backup, running from the beginning...')
+            logger.info('No backup, running from the beginning...')
             return None
 
     def writeToFile(self, chosenGroups, last):
@@ -66,15 +70,16 @@ class NotificationExtractor(npyscreen.NPSApp):
         if not last:
             for i in chosenGroups:
                 name = safe_str(i.name)
-                print("Downloading Group: " + name)
+                logger.info("Downloading Group: " + name)
                 i.load_all_earlier_messages()
-                print("Completed.")
+                logger.info("Completed.")
 
         else:
             for i in chosenGroups:
                 name = safe_str(i.name)
-                print("Downloading Group: " + name)
+                logger.info("Downloading Group: " + name)
                 i.load_earlier_messages_till(last)
+                logger.info("Completed.")
 
     def main(self):
         print("Scan QR")
@@ -99,7 +104,7 @@ class NotificationExtractor(npyscreen.NPSApp):
         F.exit_editing()
         chosenGroups = [ groupchats[int(x.split('.')[0])] for x in ms2.get_selected_objects() ]
         last = self.getProgress()
-        print("Last backed up: ", last)
+        logger.info("Last backed up: ", last)
         self.download(chosenGroups, last)
         self.writeToFile(chosenGroups, last)
 
