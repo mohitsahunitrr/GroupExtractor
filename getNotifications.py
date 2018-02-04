@@ -22,7 +22,7 @@ def cleanNumber(text):
 #!/usr/bin/env python
 # encoding: utf-8
 
-logger.basicConfig(filename='progress.log',level=logger.DEBUG)
+logger.basicConfig(filename='progress.log',level=logger.INFO)
 
 class NotificationExtractor(npyscreen.NPSApp):
     filename="removals.csv"
@@ -103,7 +103,7 @@ class NotificationExtractor(npyscreen.NPSApp):
         F.exit_editing()
         chosenGroups = [ groupchats[int(x.split('.')[0])] for x in ms2.get_selected_objects() ]
         last = self.getProgress()
-        logger.info("Last backed up: ", last)
+        logger.info("Last backed up: ", str(last))
         self.download(chosenGroups, last)
         self.writeToFile(chosenGroups, last)
 
