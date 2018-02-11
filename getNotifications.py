@@ -8,6 +8,8 @@ import time
 from datetime import datetime
 import npyscreen
 import logging as logger
+from collections import defaultdict
+import six
 import ipdb
 
 def convertStr(text):
@@ -26,12 +28,17 @@ logger.basicConfig(filename='progress.log',level=logger.INFO)
 
 class NotificationExtractor(npyscreen.NPSApp):
     filename="removals.csv"
+    dateformat="%d/%m/%y %H:%M"
+
     def getProgress(self):
+        last = defaultdict(lambda :datetime.min)
         try:
             with open(self.filename, 'rb') as csvfile:
                 reader = csv.reader(csvfile)
+                # skipping first row(Column labels)
                 next(reader)
-                last = max([datetime.strptime(row[4], "%d/%m/%y %H:%M") for row in reader])
+                for row in reader:
+                    last[row[0]] = max(last[row[0]], datetime.strptime(row[4], self.dateformat))
 
             logger.info('Detected backup, continuing progress...')
             return last
@@ -40,45 +47,50 @@ class NotificationExtractor(npyscreen.NPSApp):
             return None
 
     def writeToFile(self, chosenGroups, last):
+
         ofile = open('removals.csv', "a+")
         writer = csv.writer(ofile, delimiter=',', quotechar='"', quoting=csv.QUOTE_ALL)
-        writer.writerow(['Group Name', 'Profile Name', 'Phone Number', 'Type', 'Date'])
+
         if not last:
-            last = datetime.min
+            writer.writerow(['Group Name', 'Profile Name', 'Phone Number', 'Type', 'Date', 'By', 'By P.No'])
+            last = defaultdict(lambda: datetime.min)
+
         for i in chosenGroups:
             name = safe_str(i.name)
             notifications = filter(lambda message: isinstance(message, NotificationMessage),
                                    i.get_messages(include_notifications=True, include_me=True))
             for j in reversed(notifications):
-                if j.timestamp < last:
-                    print("Done with: " + name)
+                if j.timestamp < last[name]:
                     break
                 if j.type == 'gp2':
-                    if j.subtype == 'leave' or j.subtype == 'remove':
+                    if j.subtype in ['leave', 'remove', 'add']:
                         profile = j.recipients[0]
-                        if isinstance(profile, basestring):
-                            writer.writerow([name, "Not in Contacts", cleanNumber(profile), j.subtype,
-                                             j.timestamp.strftime("%d/%m/%y %H:%M")])
-                        else:
-                            writer.writerow([name, profile.name, cleanNumber(profile.id), j.subtype,
-                                             j.timestamp.strftime("%d/%m/%y %H:%M")])
+                        adminnum = "Unknown"
+                        adminname = "Unknown"
+                        if isinstance(j.sender, webwhatsapi.Contact):
+                            adminnum = j.sender.id
+                            adminname = j.sender.get_safe_name()
+                        profilename = "Not in Contacts" if isinstance(profile, basestring) else profile.name
+                        profileid = "Not in Contacts" if isinstance(profile, basestring) else profile.id
+                        writer.writerow([name, profilename, cleanNumber(profileid), j.subtype,
+                                             j.timestamp.strftime(self.dateformat), adminname, adminnum])
+            logger.info("Written: " + name)
 
         ofile.close()
 
     def download(self, chosenGroups, last):
-        if not last:
-            for i in chosenGroups:
-                name = safe_str(i.name)
-                logger.info("Downloading Group: " + name)
+        for i in chosenGroups:
+            name = safe_str(i.name)
+            date = datetime.now()
+            dateformat = "%d-%b-%Y %X"
+            logger.info("======= %s Scanning %s From <%s>====" % (date.strftime(dateformat), name, last[name].strftime(dateformat) if last else "Beginning"))
+            if not last or last[i.name]==datetime.min:
                 i.load_all_earlier_messages()
-                logger.info("Completed.")
+            else:
+                i.load_earlier_messages_till(last[name])
+            logger.info("%s Completed." % name)
 
-        else:
-            for i in chosenGroups:
-                name = safe_str(i.name)
-                logger.info("Downloading Group: " + name)
-                i.load_earlier_messages_till(last)
-                logger.info("Completed.")
+
 
     def main(self):
         print("Scan QR")
@@ -103,7 +115,6 @@ class NotificationExtractor(npyscreen.NPSApp):
         F.exit_editing()
         chosenGroups = [ groupchats[int(x.split('.')[0])] for x in ms2.get_selected_objects() ]
         last = self.getProgress()
-        logger.info("Last backed up: ", str(last))
         self.download(chosenGroups, last)
         self.writeToFile(chosenGroups, last)
 
