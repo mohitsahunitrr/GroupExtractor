@@ -83,8 +83,9 @@ class NotificationExtractor(npyscreen.NPSApp):
             name = safe_str(i.name)
             date = datetime.now()
             dateformat = "%d-%b-%Y %X"
-            logger.info("======= %s Scanning %s From <%s>====" % (date.strftime(dateformat), name, last[name].strftime(dateformat) if last else "Beginning"))
-            if not last or last[i.name]==datetime.min:
+            beginning = not last or last[i.name]==datetime.min
+            logger.info("======= %s Scanning %s From <%s>====" % (date.strftime(dateformat), name, last[name].strftime(dateformat) if not beginning else "Beginning"))
+            if beginning:
                 i.load_all_earlier_messages()
             else:
                 i.load_earlier_messages_till(last[name])
