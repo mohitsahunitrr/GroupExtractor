@@ -5,12 +5,16 @@ from webwhatsapi.objects.message import NotificationMessage
 from webwhatsapi.helper import safe_str
 import csv
 import time
+from os import listdir
 from datetime import datetime
 import npyscreen
 import logging as logger
 from collections import defaultdict
-import six
-import ipdb
+import re
+import locale
+
+dateformat = "%d-%b-%Y %H:%M:%S"
+filename = "removals"
 
 def convertStr(text):
     return str(text.encode('utf-8').decode('ascii', 'ignore')) if text else "(empty)"
@@ -21,34 +25,63 @@ def cleanNumber(text):
         text = text[2:]
     return text
 
+def searchDir():
+    regex = re.compile(filename+r'.+\.csv')
+    files = listdir('.')
+    backups = filter(lambda x: regex.match(x), files)
+    if len(backups)>0:
+        try:
+            dates = map(lambda x: datetime.strptime(str(x.replace(filename, "").replace(".csv", "")), dateformat), backups)
+            index = dates.index(max(dates))
+        except:
+            # In case of invalid format
+            index = 0
+        return backups[index]
+    else:
+        return False
+
+
 #!/usr/bin/env python
 # encoding: utf-8
 
 logger.basicConfig(filename='progress.log',level=logger.INFO)
 
 class NotificationExtractor(npyscreen.NPSApp):
-    filename="removals.csv"
-    dateformat="%d/%m/%y %H:%M"
 
     def getProgress(self):
         last = defaultdict(lambda :datetime.min)
-        try:
-            with open(self.filename, 'rb') as csvfile:
+        fname = searchDir()
+        if fname:
+            with open(fname, 'rb') as csvfile:
                 reader = csv.reader(csvfile)
                 # skipping first row(Column labels)
                 next(reader)
                 for row in reader:
-                    last[row[0]] = max(last[row[0]], datetime.strptime(row[4], self.dateformat))
+                    last[row[0]] = max(last[row[0]], datetime.strptime(row[4], dateformat))
 
             logger.info('Detected backup, continuing progress...')
             return last
-        except:
+
+            try:
+                with open(fname, 'rb') as csvfile:
+                    reader = csv.reader(csvfile)
+                    # skipping first row(Column labels)
+                    next(reader)
+                    for row in reader:
+                        last[row[0]] = max(last[row[0]], datetime.strptime(row[4], dateformat))
+
+                logger.info('Detected backup, continuing progress...')
+                return last
+            except:
+                logger.info('No backup, running from the beginning...')
+                return None
+        else:
             logger.info('No backup, running from the beginning...')
             return None
 
     def writeToFile(self, chosenGroups, last):
-
-        ofile = open('removals.csv', "a+")
+        now = datetime.now()
+        ofile = open((filename+now.strftime(dateformat)).strip()+'.csv', "a+")
         writer = csv.writer(ofile, delimiter=',', quotechar='"', quoting=csv.QUOTE_ALL)
 
         if not last:
@@ -73,7 +106,7 @@ class NotificationExtractor(npyscreen.NPSApp):
                         profilename = "Not in Contacts" if isinstance(profile, basestring) else profile.name
                         profileid = "Not in Contacts" if isinstance(profile, basestring) else profile.id
                         writer.writerow([name, profilename, cleanNumber(profileid), j.subtype,
-                                             j.timestamp.strftime(self.dateformat), adminname, adminnum])
+                                             j.timestamp.strftime(dateformat), adminname, adminnum])
             logger.info("Written: " + name)
 
         ofile.close()
@@ -82,7 +115,6 @@ class NotificationExtractor(npyscreen.NPSApp):
         for i in chosenGroups:
             name = safe_str(i.name)
             date = datetime.now()
-            dateformat = "%d-%b-%Y %X"
             beginning = not last or last[i.name]==datetime.min
             logger.info("======= %s Scanning %s From <%s>====" % (date.strftime(dateformat), name, last[name].strftime(dateformat) if not beginning else "Beginning"))
             if beginning:
