@@ -52,16 +52,6 @@ class NotificationExtractor(npyscreen.NPSApp):
         last = defaultdict(lambda :datetime.min)
         fname = searchDir()
         if fname:
-            with open(fname, 'rb') as csvfile:
-                reader = csv.reader(csvfile)
-                # skipping first row(Column labels)
-                next(reader)
-                for row in reader:
-                    last[row[0]] = max(last[row[0]], datetime.strptime(row[4], dateformat))
-
-            logger.info('Detected backup, continuing progress...')
-            return last
-
             try:
                 with open(fname, 'rb') as csvfile:
                     reader = csv.reader(csvfile)
@@ -106,7 +96,7 @@ class NotificationExtractor(npyscreen.NPSApp):
                         profilename = "Not in Contacts" if isinstance(profile, basestring) else profile.name
                         profileid = "Not in Contacts" if isinstance(profile, basestring) else profile.id
                         writer.writerow([name, profilename, cleanNumber(profileid), j.subtype,
-                                             j.timestamp.strftime(dateformat), adminname, adminnum])
+                                             j.timestamp.strftime(dateformat), adminname, cleanNumber(adminnum)])
             logger.info("Written: " + name)
 
         ofile.close()
