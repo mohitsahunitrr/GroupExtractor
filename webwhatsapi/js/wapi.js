@@ -325,6 +325,7 @@ window.WAPI.getAllMessagesInChat = function (id, includeMe, includeNotifications
 };
 
 window.WAPI.sendMessage = function (id, message, done) {
+    message = unescape(message);
     const Chats = Store.Chat.models;
 
     for (const chat in Chats) {
