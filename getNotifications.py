@@ -13,7 +13,7 @@ from collections import defaultdict
 import re
 import locale
 
-dateformat = "%d-%b-%Y %H:%M:%S"
+dateformat = "%d_%b_%Y_%H:%M:%S"
 filename = "removals"
 
 def convertStr(text):
@@ -118,9 +118,9 @@ class NotificationExtractor(npyscreen.NPSApp):
     def main(self):
         print("Scan QR")
         driv = webwhatsapi.WhatsAPIDriver(loadstyles=True)
-        ##Scan QR Now
+        # Scan QR Now
         print('Exporting...')
-        ##Get all chats
+        # Get all chats
         chats = driv.get_all_chats()
 
         while len(chats) == 0:
