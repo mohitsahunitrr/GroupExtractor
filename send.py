@@ -1,12 +1,10 @@
-import webwhatsapi
-import time
 import csv
 import random
+import time
 from datetime import datetime
 
-dateformat = "%d_%b_%Y_%H:%M:%S"
-filename = "sent"
-speed = 5 / 30
+import webwhatsapi
+from send_config import *
 
 print("Scan QR")
 driv = webwhatsapi.WhatsAPIDriver(loadstyles=True)
@@ -23,16 +21,16 @@ while len(chats) == 0:
     print('Retrying...')
     chats = driv.get_all_chats()
 
-with open('messages.csv', 'rb') as csvfile:
+with open(inputfile, 'rb') as csvfile:
     now = datetime.now()
-    ofile = open((filename + now.strftime(dateformat)).strip() + '.csv', "a+")
-    writer = csv.writer(ofile, delimiter=',', quotechar='"', quoting=csv.QUOTE_ALL)
+    ofile = open((logfile + now.strftime(dateformat)).strip() + '.csv', "a+")
+    writer = csv.writer(ofile, delimiter=csv_delimiter, quotechar='"', quoting=csv.QUOTE_ALL)
     writer.writerow(['Number', 'Message', 'Status'])
     reader = csv.reader(csvfile)
     next(reader)
     for row in reader:
         # Throttle
-        time.sleep(speed * (1+random.random()))
+        time.sleep(message_sending_rate * (1 + random.random()))
 
         # Fetch Message
         number = row[0]

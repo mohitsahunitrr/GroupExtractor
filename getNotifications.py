@@ -1,20 +1,21 @@
 from __future__ import print_function
-import webwhatsapi
-from webwhatsapi import GroupChat
-from webwhatsapi.objects.message import NotificationMessage
-from webwhatsapi.helper import safe_str
-import csv
-import time
-from os import listdir
-from datetime import datetime
-import npyscreen
-import logging as logger
-from collections import defaultdict
-import re
-import locale
 
-dateformat = "%d_%b_%Y_%H:%M:%S"
-filename = "removals"
+import csv
+import logging as logger
+import re
+import time
+from collections import defaultdict
+from datetime import datetime
+from os import listdir
+
+import npyscreen
+
+import webwhatsapi
+from getNotifications_config import *
+from webwhatsapi import GroupChat
+from webwhatsapi.helper import safe_str
+from webwhatsapi.objects.message import NotificationMessage
+
 
 def convertStr(text):
     return str(text.encode('utf-8').decode('ascii', 'ignore')) if text else "(empty)"
