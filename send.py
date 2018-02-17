@@ -26,9 +26,10 @@ with open(inputfile, 'rb') as csvfile:
     ofile = open((logfile + now.strftime(dateformat)).strip() + '.csv', "a+")
     writer = csv.writer(ofile, delimiter=csv_delimiter, quotechar='"', quoting=csv.QUOTE_ALL)
     writer.writerow(['Number', 'Message', 'Status'])
-    reader = csv.reader(csvfile)
+    reader = csv.reader(csvfile, delimiter=csv_delimiter)
     next(reader)
     for row in reader:
+        print(row)
         # Throttle
         time.sleep(message_sending_rate * (1 + random.random()))
 
