@@ -7,12 +7,8 @@ import time
 from collections import defaultdict
 from datetime import datetime
 from os import listdir
-
 import npyscreen
-
-import webwhatsapi
-from getNotifications_config import *
-from webwhatsapi import GroupChat
+from webwhatsapi.objects.chat import GroupChat
 from webwhatsapi.helper import safe_str
 from webwhatsapi.objects.message import NotificationMessage
 
@@ -26,7 +22,8 @@ def cleanNumber(text):
         text = text[2:]
     return text
 
-def searchDir():
+
+def searchDir(filename, dateformat):
     regex = re.compile(filename+r'.+\.csv')
     files = listdir('.')
     backups = filter(lambda x: regex.match(x), files)
@@ -45,13 +42,27 @@ def searchDir():
 #!/usr/bin/env python
 # encoding: utf-8
 
-logger.basicConfig(filename='progress.log',level=logger.INFO)
 
-class NotificationExtractor(npyscreen.NPSApp):
+class MultiPicker(npyscreen.NPSApp):
+    def __init__(self, options):
+        super(MultiPicker, self).__init__()
 
-    def getProgress(self):
+    def main(self):
+        F = npyscreen.Form(name="Choose Groups to extract leaving/removing data", )
+        self.ms2 = F.add(npyscreen.TitleMultiSelect, max_height=-2, name="Pick Several",
+                         values=[str(i) + ". " + safe_str(x.name) for i, x in enumerate(self.options)],
+                         scroll_exit=True)
+        F.edit()
+        F.exit_editing()
+
+    def get_result(self):
+        return [int(x.split('.')[0]) for x in self.ms2.get_selected_objects()]
+
+
+def ExtractGroupEvents(driv, filename, dateformat):
+    def getProgress():
         last = defaultdict(lambda :datetime.min)
-        fname = searchDir()
+        fname = searchDir(filename, dateformat)
         if fname:
             try:
                 with open(fname, 'rb') as csvfile:
@@ -70,7 +81,7 @@ class NotificationExtractor(npyscreen.NPSApp):
             logger.info('No backup, running from the beginning...')
             return None
 
-    def writeToFile(self, chosenGroups, last):
+    def writeToFile(chosenGroups, last):
         now = datetime.now()
         ofile = open((filename+now.strftime(dateformat)).strip()+'.csv', "a+")
         writer = csv.writer(ofile, delimiter=',', quotechar='"', quoting=csv.QUOTE_ALL)
@@ -102,7 +113,7 @@ class NotificationExtractor(npyscreen.NPSApp):
 
         ofile.close()
 
-    def download(self, chosenGroups, last):
+    def download(chosenGroups, last):
         for i in chosenGroups:
             name = safe_str(i.name)
             date = datetime.now()
@@ -114,34 +125,15 @@ class NotificationExtractor(npyscreen.NPSApp):
                 i.load_earlier_messages_till(last[name])
             logger.info("%s Completed." % name)
 
-
-
-    def main(self):
-        print("Scan QR")
-        driv = webwhatsapi.WhatsAPIDriver(loadstyles=True)
-        # Scan QR Now
-        print('Exporting...')
-        # Get all chats
-        chats = driv.get_all_chats()
-
-        while len(chats) == 0:
-            time.sleep(4)
-            print('Retrying...')
-            chats = driv.get_all_chats()
-
+    def grouppicker():
         chats = driv.get_all_chats()
         groupchats = filter(lambda chat: isinstance(chat, GroupChat), chats)
+        picker = MultiPicker(groupchats)
+        picker.run()
+        return [groupchats[x] for x in picker.get_result()]
 
-        F  = npyscreen.Form(name = "Choose Groups to extract leaving/removing data",)
-        ms2= F.add(npyscreen.TitleMultiSelect, max_height =-2, name="Pick Several",
-        values = [ str(i) + ". "+safe_str(x.name) for i,x in enumerate(groupchats)], scroll_exit=True)
-        F.edit()
-        F.exit_editing()
-        chosenGroups = [ groupchats[int(x.split('.')[0])] for x in ms2.get_selected_objects() ]
-        last = self.getProgress()
-        self.download(chosenGroups, last)
-        self.writeToFile(chosenGroups, last)
-
-if __name__ == "__main__":
-    App = NotificationExtractor()
-    App.run()
+    logger.basicConfig(filename='progress.log', level=logger.INFO)
+    chosenGroups = grouppicker()
+    last = getProgress()
+    download(chosenGroups, last)
+    writeToFile(chosenGroups, last)
