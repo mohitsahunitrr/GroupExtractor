@@ -2,7 +2,22 @@ import re
 from datetime import datetime
 from os import listdir
 
+import npyscreen
+
 from webwhatsapi.helper import safe_str
+
+
+def get_valid_filename(s):
+    """
+    Return the given string converted to a string that can be used for a clean
+    filename. Remove leading and trailing spaces; convert other spaces to
+    underscores; and remove anything that is not an alphanumeric, dash,
+    underscore, or dot.
+    >>> get_valid_filename("john's portrait in 2004.jpg")
+    'johns_portrait_in_2004.jpg'
+    """
+    s = str(s).strip().replace(' ', '_')
+    return re.sub(r'(?u)[^-\w.]', '', s)
 
 
 def convertStr(text):
@@ -16,7 +31,7 @@ def cleanNumber(text):
     return text
 
 
-def searchDir(filename, dateformat):
+def searchDir(filename, dateformat): 
     regex = re.compile(filename + r'.+\.csv')
     files = listdir('.')
     backups = filter(lambda x: regex.match(x), files)

@@ -25,7 +25,9 @@ window.WAPI._serializeRawObj = (obj) => {
     return obj.all;
 };
 
-window.WAPI._serializeContactObj = (obj) => (obj?{
+window.WAPI._serializeContactObj = (obj) =
+>
+({
     formattedName: obj.__x_formattedName,
     formattedShortName: obj.__x_formattedShortName,
     shortName: obj.__x_formattedShortName,
@@ -43,7 +45,7 @@ window.WAPI._serializeContactObj = (obj) => (obj?{
     profilePicThumb: obj.__x_profilePicThumb ? obj.__x_profilePicThumb.__x_imgFull : "none",
     statusMute: obj.__x_statusMute,
     pushname: obj.__x_pushname
-}:null);
+});
 
 window.WAPI._serializeNotificationObj = (obj) => ({
     sender: obj["senderObj"] ? WAPI._serializeContactObj(obj["senderObj"]) : false,
@@ -125,6 +127,24 @@ window.WAPI.getAllChats = function (done) {
 };
 
 /**
+ * Fetches all groups objects from store
+ *
+ * @param done Optional callback function for async execution
+ * @returns {Array|*} List of chats
+ */
+window.WAPI.getAllGroups = function (done) {
+    const groups = window.WAPI.getAllChats().filter((chat) = > chat.isGroup
+)
+    ;
+
+    if (done !== undefined) {
+        done(groups);
+    } else {
+        return groups;
+    }
+};
+
+/**
  * Fetches chat object from store by ID
  *
  * @param id ID of chat
@@ -163,34 +183,20 @@ window.WAPI.loadEarlierMessages = function (id, done) {
  * @param done Optional callback function for async execution
  * @returns None
  */
+// window.WAPI.recurseLoad = function (found, done){
+//     if(!found.msgs.msgLoadState.__x_noEarlierMsgs){
+//         found.loadEarlierMessages().then(window.WAPI.recurse);
+//     }else {
+//         done();
+//     }
+// };
 
 window.WAPI.loadAllEarlierMessages = function (id, done) {
     const found = Store.Chat.models.find((chat) => chat.id === id);
     x = function(){
-        if(!found.msgs.msgLoadState.__x_noEarlierMsgs){
+        if (!found.msgs.msgLoadState.__x_noEarlierMsgs) {
             found.loadEarlierMsgs().then(x);
-        }else {
-            done();
-        }
-    };
-    x();
-};
-
-/**
- * Load more messages in chat object from store by ID till a particular date
- *
- * @param id ID of chat
- * @param lastMessage UTC timestamp of last message to be loaded
- * @param done Optional callback function for async execution
- * @returns None
- */
-
-window.WAPI.loadEarlierMessagesTillDate = function (id, lastMessage, done) {
-    const found = Store.Chat.models.find((chat) => chat.id === id);
-    x = function(){
-        if(found.msgs.models[0].t>lastMessage){
-            found.loadEarlierMsgs().then(x);
-        }else {
+        } else {
             done();
         }
     };
@@ -222,20 +228,24 @@ window.WAPI.getAllGroupMetadata = function (done) {
  * @returns {T|*} Group metadata object
  */
 window.WAPI.getGroupMetadata = async function (id, done) {
-    let found = Store.GroupMetadata.models.find((groupData) => groupData.id === id);
+    let output = Store.GroupMetadata.models.find((groupData) = > groupData.id === id
+)
+    ;
 
-    if (found !== undefined) {
-        if (found.stale) {
-            await found.update();
+    if (output !== undefined) {
+        if (output.stale) {
+            await
+            output.update();
         }
     }
 
     if (done !== undefined) {
-        done(found);
-    } else {
-        return found;
+        done(output);
     }
+    return output;
+
 };
+
 
 /**
  * Fetches group participants
@@ -257,21 +267,33 @@ window.WAPI._getGroupParticipants = async function (id) {
  * @returns {Promise.<Array|*>} Yields list of IDs
  */
 window.WAPI.getGroupParticipantIDs = async function (id, done) {
-    const participants = await WAPI._getGroupParticipants(id);
-    const ids = participants.map((participant) => participant.id);
+    const output = (await
+    WAPI._getGroupParticipants(id)
+)
+.
+    map((participant) = > participant.id
+)
+    ;
 
     if (done !== undefined) {
-        done(ids);
-    } else {
-        return ids;
+        done(output);
     }
+    return output;
 };
 
-window.WAPI.getGroupAdmins = async function (id) {
-    const participants = await WAPI._getGroupParticipants(id);
-    return participants
+window.WAPI.getGroupAdmins = async
+
+function (id, done) {
+    const output = (await
+    WAPI._getGroupParticipants(id)
+)
         .filter((participant) => participant.isAdmin)
         .map((admin) => admin.id);
+
+    if (done !== undefined) {
+        done(output);
+    }
+    return output;
 };
 
 /**
@@ -325,9 +347,8 @@ window.WAPI.getAllMessagesInChat = function (id, includeMe, includeNotifications
 };
 
 window.WAPI.sendMessage = function (id, message, done) {
-    message = unescape(message);
     const Chats = Store.Chat.models;
-
+    message = unescape(message);
     for (const chat in Chats) {
         if (isNaN(chat)) {
             continue;
@@ -402,18 +423,50 @@ window.WAPI.getUnreadMessages = function (includeMe, includeNotifications, done)
     }
     if (done !== undefined) {
         done(output);
-    } else {
-        return output;
     }
     return output;
 };
 
-window.WAPI.getGroupOwnerID = async function (id) {
-    return WAPI.getGroupMetadata(id).owner.id;
+window.WAPI.getGroupOwnerID = async
+
+function (id, done) {
+    const output = await
+    WAPI.getGroupMetadata(id).owner.id;
+    if (done !== undefined) {
+        done(output);
+    }
+    return output;
+
 };
 
-// FUNCTIONS UNDER THIS LINE ARE UNSTABLE
+window.WAPI.getCommonGroups = async
 
-window.WAPI.getCommonGroups = function (id) {
-    // return
+function (id, done) {
+    let output = [];
+
+    groups = window.WAPI.getAllGroups();
+
+    for (let idx in groups) {
+        try {
+            participants = await
+            window.WAPI.getGroupParticipantIDs(groups[idx].id);
+            if (participants.filter((participant) = > participant == id).
+            length
+        )
+            {
+                output.push(groups[idx]);
+            }
+        } catch (err) {
+            console.log("Error in group:");
+            console.log(groups[idx]);
+            console.log(err);
+        }
+    }
+
+    if (done !== undefined) {
+        done(output);
+    }
+    return output;
 };
+
+

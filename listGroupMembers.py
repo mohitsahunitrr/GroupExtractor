@@ -1,6 +1,7 @@
 import csv
 
 from helpers import convertStr, cleanNumber, MultiPicker
+from helpers import get_valid_filename
 from webwhatsapi.objects.chat import GroupChat
 
 
@@ -18,7 +19,7 @@ def listGroupMembers(driv):
         try:
             ##Create CSV
             safe_name = convertStr(chat.name)
-            ofile = open(str(safe_name) + '.csv', "wb")
+            ofile = open(get_valid_filename(str(safe_name)) + '.csv', "wb")
             writer = csv.writer(ofile, delimiter=',', quotechar='"', quoting=csv.QUOTE_ALL)
             writer.writerow(['Name', 'Profile Name', 'Phone Number'])
             ##Iterate Through Group Participants
