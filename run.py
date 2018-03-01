@@ -46,7 +46,7 @@ while True:
     for i, v in enumerate(options):
         print(" ".join([str(i), ":", v["desc"]]))
     print("%s : Exit"%len(options))
-    option = int(input("Pick and option [0-%s]"%len(options)))
+    option = int(input("Pick and option [0-%s]: "%len(options)))
     if option == len(options):
         break
     else:
