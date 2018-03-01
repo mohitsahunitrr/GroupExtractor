@@ -34,7 +34,7 @@ def cleanNumber(text):
 def searchDir(filename, dateformat): 
     regex = re.compile(filename + r'.+\.csv')
     files = listdir('.')
-    backups = filter(lambda x: regex.match(x), files)
+    backups = list(filter(lambda x: regex.match(x), files))
     if len(backups) > 0:
         try:
             dates = map(lambda x: datetime.strptime(str(x.replace(filename, "").replace(".csv", "")), dateformat),
@@ -51,6 +51,7 @@ def searchDir(filename, dateformat):
 class MultiPicker(npyscreen.NPSApp):
     def __init__(self, options):
         super(MultiPicker, self).__init__()
+        self.options = options
 
     def main(self):
         F = npyscreen.Form(name="Choose Groups to extract leaving/removing data", )

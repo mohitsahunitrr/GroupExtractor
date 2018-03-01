@@ -5,7 +5,7 @@ import random
 
 
 def sendFromCSV(inputfile, logfile, dateformat, csv_delimiter, message_sending_rate, driv):
-    with open(inputfile, 'rb') as csvfile:
+    with open(inputfile, 'r') as csvfile:
         now = datetime.now()
         ofile = open((logfile + now.strftime(dateformat)).strip() + '.csv', "a+")
         writer = csv.writer(ofile, delimiter=csv_delimiter, quotechar='"', quoting=csv.QUOTE_ALL)

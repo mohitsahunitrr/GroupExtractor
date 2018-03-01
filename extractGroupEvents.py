@@ -1,13 +1,15 @@
 from __future__ import print_function
 
 import csv
+import sys
 import logging as logger
 from collections import defaultdict
 from datetime import datetime
 
-from helpers import cleanNumber, searchDir, MultiPicker
+from helpers import cleanNumber, searchDir, MultiPicker, safe_str
 from webwhatsapi.objects.chat import GroupChat
 from webwhatsapi.objects.message import NotificationMessage
+import webwhatsapi
 
 
 #!/usr/bin/env python
@@ -48,8 +50,8 @@ def ExtractGroupEvents(driv, filename, dateformat):
 
         for i in chosenGroups:
             name = safe_str(i.name)
-            notifications = filter(lambda message: isinstance(message, NotificationMessage),
-                                   i.get_messages(include_notifications=True, include_me=True))
+            notifications = list(filter(lambda message: isinstance(message, NotificationMessage),
+                                   i.get_messages(include_notifications=True, include_me=True)))
             for j in reversed(notifications):
                 if j.timestamp < last[name]:
                     break
@@ -62,7 +64,7 @@ def ExtractGroupEvents(driv, filename, dateformat):
                             adminnum = j.sender.id
                             adminname = j.sender.get_safe_name()
                         profilename = "Not in Contacts" if isinstance(profile, basestring) else profile.name
-                        profileid = "Not in Contacts" if isinstance(profile, basestring) else profile.id
+                        profileid = profile if isinstance(profile, basestring) else profile.id
                         writer.writerow([name, profilename, cleanNumber(profileid), j.subtype,
                                              j.timestamp.strftime(dateformat), adminname, cleanNumber(adminnum)])
             logger.info("Written: " + name)

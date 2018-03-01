@@ -45,5 +45,11 @@ while True:
     ]
     for i, v in enumerate(options):
         print(" ".join([str(i), ":", v["desc"]]))
-    option = int(input("Pick and option [0-2]"))
-    options[option]["function"]()
+    print("%s : Exit"%len(options))
+    option = int(input("Pick and option [0-%s]"%len(options)))
+    if option == len(options):
+        break
+    else:
+        options[option]["function"]()
+
+driv.quit()

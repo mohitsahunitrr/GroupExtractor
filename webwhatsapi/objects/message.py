@@ -1,12 +1,19 @@
 import mimetypes
-import os
 from base64 import b64decode
 from datetime import datetime
+
+import os
 
 from webwhatsapi.helper import safe_str
 from webwhatsapi.objects.contact import Contact
 from webwhatsapi.objects.whatsapp_object import WhatsappObject
 
+def getContacts(x, driver):
+    try:
+        contact = driver.get_contact_from_id(x)
+        return contact
+    except:
+        return x
 
 def factory_message(js_obj, driver):
     if js_obj["isMedia"]:
@@ -115,7 +122,7 @@ class NotificationMessage(Message):
         self.type = js_obj["type"]
         self.subtype = js_obj["subtype"].encode("ascii", "ignore")
         if js_obj["recipients"]:
-            self.recipients = [self.driver.get_contact_from_id(x) for x in js_obj["recipients"]]
+            self.recipients = [getContacts(x, driver) for x in js_obj["recipients"]]
 
     def __repr__(self):
         readable = {
@@ -143,9 +150,6 @@ class NotificationMessage(Message):
 
 
 class MessageGroup(object):
-    """
-    Represents a set of messages
-    """
     def __init__(self, chat, messages):
         """
         Constructor

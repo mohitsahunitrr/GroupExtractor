@@ -25,9 +25,7 @@ window.WAPI._serializeRawObj = (obj) => {
     return obj.all;
 };
 
-window.WAPI._serializeContactObj = (obj) =
->
-({
+window.WAPI._serializeContactObj = (obj) => (obj?{
     formattedName: obj.__x_formattedName,
     formattedShortName: obj.__x_formattedShortName,
     shortName: obj.__x_formattedShortName,
@@ -45,7 +43,7 @@ window.WAPI._serializeContactObj = (obj) =
     profilePicThumb: obj.__x_profilePicThumb ? obj.__x_profilePicThumb.__x_imgFull : "none",
     statusMute: obj.__x_statusMute,
     pushname: obj.__x_pushname
-});
+}:null);
 
 window.WAPI._serializeNotificationObj = (obj) => ({
     sender: obj["senderObj"] ? WAPI._serializeContactObj(obj["senderObj"]) : false,
@@ -133,9 +131,7 @@ window.WAPI.getAllChats = function (done) {
  * @returns {Array|*} List of chats
  */
 window.WAPI.getAllGroups = function (done) {
-    const groups = window.WAPI.getAllChats().filter((chat) = > chat.isGroup
-)
-    ;
+    const groups = window.WAPI.getAllChats().filter((chat) => chat.isGroup);
 
     if (done !== undefined) {
         done(groups);
@@ -183,20 +179,34 @@ window.WAPI.loadEarlierMessages = function (id, done) {
  * @param done Optional callback function for async execution
  * @returns None
  */
-// window.WAPI.recurseLoad = function (found, done){
-//     if(!found.msgs.msgLoadState.__x_noEarlierMsgs){
-//         found.loadEarlierMessages().then(window.WAPI.recurse);
-//     }else {
-//         done();
-//     }
-// };
 
 window.WAPI.loadAllEarlierMessages = function (id, done) {
     const found = Store.Chat.models.find((chat) => chat.id === id);
     x = function(){
-        if (!found.msgs.msgLoadState.__x_noEarlierMsgs) {
+        if (!found.msgs.msgLoadState.__x_noEarlierMsgs){
             found.loadEarlierMsgs().then(x);
         } else {
+            done();
+        }
+    };
+    x();
+};
+
+/**
+ * Load more messages in chat object from store by ID till a particular date
+ *
+ * @param id ID of chat
+ * @param lastMessage UTC timestamp of last message to be loaded
+ * @param done Optional callback function for async execution
+ * @returns None
+ */
+
+window.WAPI.loadEarlierMessagesTillDate = function (id, lastMessage, done) {
+    const found = Store.Chat.models.find((chat) => chat.id === id);
+    x = function(){
+        if(found.msgs.models[0].t>lastMessage){
+            found.loadEarlierMsgs().then(x);
+        }else {
             done();
         }
     };
@@ -228,14 +238,11 @@ window.WAPI.getAllGroupMetadata = function (done) {
  * @returns {T|*} Group metadata object
  */
 window.WAPI.getGroupMetadata = async function (id, done) {
-    let output = Store.GroupMetadata.models.find((groupData) = > groupData.id === id
-)
-    ;
+    let output = Store.GroupMetadata.models.find((groupData) => groupData.id === id);
 
     if (output !== undefined) {
         if (output.stale) {
-            await
-            output.update();
+            await output.update();
         }
     }
 
@@ -267,13 +274,8 @@ window.WAPI._getGroupParticipants = async function (id) {
  * @returns {Promise.<Array|*>} Yields list of IDs
  */
 window.WAPI.getGroupParticipantIDs = async function (id, done) {
-    const output = (await
-    WAPI._getGroupParticipants(id)
-)
-.
-    map((participant) = > participant.id
-)
-    ;
+    const output = (await WAPI._getGroupParticipants(id))
+        .map((participant) => participant.id);
 
     if (done !== undefined) {
         done(output);
@@ -281,12 +283,8 @@ window.WAPI.getGroupParticipantIDs = async function (id, done) {
     return output;
 };
 
-window.WAPI.getGroupAdmins = async
-
-function (id, done) {
-    const output = (await
-    WAPI._getGroupParticipants(id)
-)
+window.WAPI.getGroupAdmins = async function (id, done) {
+    const output = (await WAPI._getGroupParticipants(id))
         .filter((participant) => participant.isAdmin)
         .map((admin) => admin.id);
 
@@ -427,11 +425,8 @@ window.WAPI.getUnreadMessages = function (includeMe, includeNotifications, done)
     return output;
 };
 
-window.WAPI.getGroupOwnerID = async
-
-function (id, done) {
-    const output = await
-    WAPI.getGroupMetadata(id).owner.id;
+window.WAPI.getGroupOwnerID = async function (id, done) {
+    const output = await WAPI.getGroupMetadata(id).owner.id;
     if (done !== undefined) {
         done(output);
     }
@@ -439,24 +434,18 @@ function (id, done) {
 
 };
 
-window.WAPI.getCommonGroups = async
-
-function (id, done) {
+window.WAPI.getCommonGroups = async function (id, done) {
     let output = [];
 
     groups = window.WAPI.getAllGroups();
 
     for (let idx in groups) {
         try {
-            participants = await
-            window.WAPI.getGroupParticipantIDs(groups[idx].id);
-            if (participants.filter((participant) = > participant == id).
-            length
-        )
-            {
+            participants = await window.WAPI.getGroupParticipantIDs(groups[idx].id);
+            if (participants.filter((participant) => participant == id).length) {
                 output.push(groups[idx]);
             }
-        } catch (err) {
+        } catch(err) {
             console.log("Error in group:");
             console.log(groups[idx]);
             console.log(err);

@@ -6,11 +6,11 @@ WebWhatsAPI module
 """
 
 import logging
+from json import dumps, loads
+
 import os
 import shutil
 import tempfile
-from json import dumps, loads
-
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
