@@ -8,9 +8,11 @@ import webwhatsapi
 from extractGroupEvents import ExtractGroupEvents
 from listGroupMembers import listGroupMembers
 from send import sendFromCSV
+import os
 
 print("Scan QR")
-driv = webwhatsapi.WhatsAPIDriver(loadstyles=True)
+
+driv = webwhatsapi.WhatsAPIDriver(loadstyles=True, profile=os.path.abspath('/home/mukul/.mozilla/firefox/auevaw5q.default/'))
 
 # Scan QR Now
 print('Sending...')
@@ -23,6 +25,9 @@ while len(chats) == 0:
     time.sleep(4)
     print('Retrying...')
     chats = driv.get_all_chats()
+
+if driv._profile_path:
+    driv.save_firefox_profile(remove_old=True)
 
 while True:
     options = [
