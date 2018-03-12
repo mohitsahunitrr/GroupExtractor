@@ -6,7 +6,7 @@ import logging as logger
 from collections import defaultdict
 from datetime import datetime
 
-from helpers import cleanNumber, searchDir, MultiPicker, safe_str
+from helpers import cleanNumber, searchDir, safe_str, grouppicker
 from webwhatsapi.objects.chat import GroupChat
 from webwhatsapi.objects.message import NotificationMessage
 import webwhatsapi
@@ -83,15 +83,8 @@ def ExtractGroupEvents(driv, filename, dateformat):
                 i.load_earlier_messages_till(last[name])
             logger.info("%s Completed." % name)
 
-    def grouppicker():
-        chats = driv.get_all_chats()
-        groupchats = list(filter(lambda chat: isinstance(chat, GroupChat), chats))
-        picker = MultiPicker(groupchats)
-        picker.run()
-        return [groupchats[x] for x in picker.get_result()]
-
     logger.basicConfig(filename='progress.log', level=logger.INFO)
-    chosenGroups = grouppicker()
+    chosenGroups = grouppicker(driv)
     last = getProgress()
     download(chosenGroups, last)
     writeToFile(chosenGroups, last)

@@ -21,11 +21,14 @@ def sendFromCSV(inputfile, logfile, dateformat, csv_delimiter, message_sending_r
             number = row[0]
             message = row[1]
             # Send Message
-            chat = driv.get_chat_from_phone_number(number)
-            if chat:
-                chat.send_message(message)
-                writer.writerow([number, message, "Success"])
-            else:
+            try:
+                chat = driv.get_chat_from_phone_number(number)
+                if chat:
+                    chat.send_message(message)
+                    writer.writerow([number, message, "Success"])
+                else:
+                    writer.writerow([number, message, "Failed"])
+            except:
                 writer.writerow([number, message, "Failed"])
 
         ofile.close()

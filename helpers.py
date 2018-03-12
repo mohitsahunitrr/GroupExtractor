@@ -1,7 +1,7 @@
 import re
 from datetime import datetime
 from os import listdir
-
+from webwhatsapi.objects.chat import GroupChat
 import npyscreen
 
 from webwhatsapi.helper import safe_str
@@ -47,19 +47,22 @@ def searchDir(filename, dateformat):
     else:
         return False
 
+def multipicker(options):
+    def options_factory(options):
+        def fun(*args):
+            F = npyscreen.Form(name="Choose Groups to extract leaving/removing data", )
+            ms2 = F.add(npyscreen.TitleMultiSelect, max_height=-2, name="Pick Several",
+                        values=[str(i) + ". " + safe_str(x.name) for i, x in enumerate(options)],
+                        scroll_exit=True)
+            F.edit()
+            F.exit_editing()
+            return [int(x.split('.')[0]) for x in ms2.get_selected_objects()]
 
-class MultiPicker(npyscreen.NPSApp):
-    def __init__(self, options):
-        super(MultiPicker, self).__init__()
-        self.options = options
+        return fun
+    x = npyscreen.wrapper_basic(options_factory(options))
+    return [options[x] for x in x]
 
-    def main(self):
-        F = npyscreen.Form(name="Choose Groups to extract leaving/removing data", )
-        self.ms2 = F.add(npyscreen.TitleMultiSelect, max_height=-2, name="Pick Several",
-                         values=[str(i) + ". " + safe_str(x.name) for i, x in enumerate(self.options)],
-                         scroll_exit=True)
-        F.edit()
-        F.exit_editing()
-
-    def get_result(self):
-        return [int(x.split('.')[0]) for x in self.ms2.get_selected_objects()]
+def grouppicker(driv):
+    chats = driv.get_all_chats()
+    groupchats = list(filter(lambda chat: isinstance(chat, GroupChat), chats))
+    return multipicker(groupchats)

@@ -8,11 +8,21 @@ import webwhatsapi
 from extractGroupEvents import ExtractGroupEvents
 from listGroupMembers import listGroupMembers
 from send import sendFromCSV
-import os
+import sys
+
+def clean_up():
+    driv.quit()
+
+def custom_except(tp, val, traceback):
+    try:
+        clean_up()
+    except:
+        pass
+    return sys.excepthook(tp, val, traceback)
 
 print("Scan QR")
-
-driv = webwhatsapi.WhatsAPIDriver(loadstyles=True, profile=os.path.abspath('/home/mukul/.mozilla/firefox/auevaw5q.default/'))
+# firefox = os.path.abspath('/home/mukul/.mozilla/firefox/auevaw5q.default/')
+driv = webwhatsapi.WhatsAPIDriver(loadstyles=True)
 
 # Scan QR Now
 print('Sending...')
@@ -57,4 +67,4 @@ while True:
     else:
         options[option]["function"]()
 
-driv.quit()
+clean_up()
