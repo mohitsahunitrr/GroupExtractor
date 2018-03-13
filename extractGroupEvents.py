@@ -5,7 +5,7 @@ import sys
 import logging as logger
 from collections import defaultdict
 from datetime import datetime
-
+from six import string_types
 from helpers import cleanNumber, searchDir, safe_str, grouppicker
 from webwhatsapi.objects.chat import GroupChat
 from webwhatsapi.objects.message import NotificationMessage
@@ -23,13 +23,12 @@ def ExtractGroupEvents(driv, filename, dateformat):
         fname = searchDir(filename, dateformat)
         if fname:
             try:
-                with open(fname, 'rb') as csvfile:
+                with open(fname, 'r') as csvfile:
                     reader = csv.reader(csvfile)
                     # skipping first row(Column labels)
                     next(reader)
                     for row in reader:
                         last[row[0]] = max(last[row[0]], datetime.strptime(row[4], dateformat))
-
                 logger.info('Detected backup, continuing progress...')
                 return last
             except:
@@ -56,15 +55,15 @@ def ExtractGroupEvents(driv, filename, dateformat):
                 if j.timestamp < last[name]:
                     break
                 if j.type == 'gp2':
-                    if j.subtype in ['leave', 'remove', 'add']:
+                    if j.subtype.decode('UTF') in ['leave', 'remove', 'add']:
                         profile = j.recipients[0]
                         adminnum = "Unknown"
                         adminname = "Unknown"
                         if isinstance(j.sender, webwhatsapi.Contact):
                             adminnum = j.sender.id
                             adminname = j.sender.get_safe_name()
-                        profilename = "Not in Contacts" if isinstance(profile, basestring) else profile.name
-                        profileid = profile if isinstance(profile, basestring) else profile.id
+                        profilename = "Not in Contacts" if isinstance(profile, string_types) else profile.name
+                        profileid = profile if isinstance(profile, string_types) else profile.id
                         writer.writerow([name, profilename, cleanNumber(profileid), j.subtype,
                                              j.timestamp.strftime(dateformat), adminname, cleanNumber(adminnum)])
             logger.info("Written: " + name)
