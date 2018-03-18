@@ -5,6 +5,7 @@ from six.moves import input
 import extractGroupEvents_config
 import send_config
 import webwhatsapi
+from helpers import grouppicker
 from extractGroupEvents import ExtractGroupEvents
 from listGroupMembers import listGroupMembers
 from send import sendFromCSV
@@ -44,7 +45,7 @@ while True:
         {
             'desc': "Extract Group Events",
             'function': lambda: ExtractGroupEvents(filename=extractGroupEvents_config.filename,
-                                                   dateformat=extractGroupEvents_config.dateformat, driv=driv),
+                                                   dateformat=extractGroupEvents_config.dateformat, chosenGroups=grouppicker(driv)),
         },
         {
             'desc': "Send Messages from CSV",
@@ -55,7 +56,7 @@ while True:
         },
         {
             'desc': "List Group Members",
-            'function': lambda: listGroupMembers(driv)
+            'function': lambda: listGroupMembers(grouppicker(driv))
         }
     ]
     for i, v in enumerate(options):

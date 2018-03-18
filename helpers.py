@@ -19,7 +19,6 @@ def get_valid_filename(s):
     s = str(s).strip().replace(' ', '_')
     return re.sub(r'(?u)[^-\w.]', '', s)
 
-
 def convertStr(text):
     return str(text.encode('utf-8').decode('ascii', 'ignore')) if text else "(empty)"
 
